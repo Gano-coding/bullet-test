@@ -1,0 +1,590 @@
+/**
+ * 批量生成鹅城签角色海报
+ * 用法: node generate-posters.mjs
+ */
+
+import { createCanvas } from 'canvas';
+import fs from 'fs';
+import path from 'path';
+import QRCode from 'qrcode';
+
+// 角色数据（从 src/types/index.ts 提取）
+const CHARACTERS = [
+  { id: 'zhang', name: '张麻子', label: '理想主义者', percentage: 85, verdict: '白驹踏碎夕阳关九筒遮天半面寒掷却荣华求一秤孤星垂野万山残', survivalGuide: ['学会把担子分给值得信赖的人', '定期和队友聊聊心里话'], metaphysics: '射手座加处女座特质 · 幸运物九筒面具', mbti: 'INFJ' },
+  { id: 'huang', name: '黄四郎', label: '秩序掌控者', percentage: 78, verdict: '金丝笼里笑藏锋宴罢方知影更骄最恐铜镜生两我高台塌作夜枭巢', survivalGuide: ['偶尔主动分享一个无关紧要的小秘密', '培养一个和事业完全无关的成就感来源'], metaphysics: '摩羯加天蝎特质 · 幸运物金色怀表', mbti: 'ENTJ' },
+  { id: 'tang', name: '汤师爷', label: '生存策略家', percentage: 72, verdict: '鼠须蘸酒画乾坤左揖右让假亦真落水犹呼枝上腿原来魂寄不归人', survivalGuide: ['给自己定一条永远不会妥协的原则', '试着对一个人完全坦诚'], metaphysics: '双子加双鱼特质 · 幸运物银元', mbti: 'ESFP' },
+  { id: 'laosan', name: '老三', label: '进取实干家', percentage: 68, verdict: '鞍前风尘未沾襟忽向浦东换旧心少年壮志当凌云莫忘来路同行人', survivalGuide: ['把个人目标和团队目标对齐', '找一个值得学习的榜样'], metaphysics: '白羊加狮子特质 · 幸运物怀表链', mbti: 'ESTP' },
+  { id: 'laoer', name: '老二', label: '沉默守护者', percentage: 65, verdict: '弓藏何用话平生影入荒原草自横偶有风声传旧令无人知是故人情', survivalGuide: ['每周给自己一个小的肯定', '试着表达一次自己的需求'], metaphysics: '金牛加巨蟹特质 · 幸运物护身吊坠', mbti: 'ISFJ' },
+  { id: 'huajie', name: '花姐', label: '独立觉醒者', percentage: 62, verdict: '半抱琵琶半执琴红妆拆作两茫茫江湖不问归舟晚自渡风波即道场', survivalGuide: ['找到一件值得长期投入的热爱之事', '允许自己偶尔依赖一下可信的人'], metaphysics: '天秤加水瓶特质 · 幸运物琵琶', mbti: 'ENFP' },
+  { id: 'furen', name: '县长夫人', label: '目标务实派', percentage: 58, verdict: '珠帘漫卷算银钩一梦荣华一梦休心中若有桃花源何处不是水云间', survivalGuide: ['尝试经营一段不图回报的关系', '允许自己在一个安全的环境里放松一次'], metaphysics: '摩羯加处女特质 · 幸运物金镯子', mbti: 'ESTJ' },
+  { id: 'huwan', name: '胡万', label: '规则执行者', percentage: 55, verdict: '舌底藏锋礼作符剪尽花枝为护株明镜亦须勤拂拭莫使初心落满尘', survivalGuide: ['每周看一部能触动你的电影或书', '下次做事前多问一句为什么'], metaphysics: '天蝎加摩羯特质 · 幸运物木牌', mbti: 'ISTP' },
+  { id: 'wujuren', name: '武举人', label: '韧性生存者', percentage: 52, verdict: '折腰何止为粱谋笑骂由人亦自由一朝挺直脊梁骨方知天地本来宽', survivalGuide: ['下次试着不弯腰', '学一个能让自己骄傲的技能'], metaphysics: '双鱼加天秤特质 · 幸运物假银票', mbti: 'ESFP' },
+  { id: 'sunshouyi', name: '孙守义', label: '善良生活者', percentage: 48, verdict: '凉粉一碗抵千秋清白原是最温柔守住心中一寸善便是人间好时节', survivalGuide: ['从拒绝一件小事开始练习说不', '找到一个会维护你的朋友'], metaphysics: '巨蟹加处女特质 · 幸运物一碗凉粉', mbti: 'ISFJ' },
+];
+
+const POSTER_W = 1080;
+const POSTER_H = 1920;
+const SHARE_URL = 'https://oa7gu7fu8id9.meoo.info';
+const DISCLAIMER = '本测试为粉丝向娱乐作品，结果仅供娱乐参考，不构成心理测评、医疗或运势建议；与电影及权利方无关。';
+
+// 加载字体（使用系统默认中文字体）
+function loadFonts() {
+  // canvas 库会自动使用系统字体
+}
+
+function drawDiceFace(ctx, x, y, size, pips, rotationDeg = 0) {
+  ctx.save();
+  ctx.translate(x + size / 2, y + size / 2);
+  ctx.rotate((rotationDeg * Math.PI) / 180);
+  
+  const half = size / 2;
+  const grad = ctx.createLinearGradient(-half, -half, half, half);
+  grad.addColorStop(0, '#F3E6B8');
+  grad.addColorStop(0.45, '#E8D48B');
+  grad.addColorStop(1, '#B8973E');
+  
+  // 圆角矩形
+  const r = size * 0.18;
+  ctx.beginPath();
+  ctx.moveTo(-half + r, -half);
+  ctx.lineTo(half - r, -half);
+  ctx.quadraticCurveTo(half, -half, half, -half + r);
+  ctx.lineTo(half, half - r);
+  ctx.quadraticCurveTo(half, half, half - r, half);
+  ctx.lineTo(-half + r, half);
+  ctx.quadraticCurveTo(-half, half, -half, half - r);
+  ctx.lineTo(-half, -half + r);
+  ctx.quadraticCurveTo(-half, -half, -half + r, -half);
+  ctx.closePath();
+  
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(90, 60, 20, 0.55)';
+  ctx.lineWidth = Math.max(2, size * 0.04);
+  ctx.stroke();
+  
+  const pipR = size * 0.09;
+  const inset = size * 0.28;
+  const positions = {
+    1: [[0, 0]],
+    2: [[-inset, -inset], [inset, inset]],
+    3: [[-inset, -inset], [0, 0], [inset, inset]],
+    4: [[-inset, -inset], [inset, -inset], [-inset, inset], [inset, inset]],
+    5: [[-inset, -inset], [inset, -inset], [0, 0], [-inset, inset], [inset, inset]],
+    6: [[-inset, -inset], [inset, -inset], [-inset, 0], [inset, 0], [-inset, inset], [inset, inset]],
+  };
+  
+  const dots = positions[Math.min(6, Math.max(1, pips))] || positions[1];
+  dots.forEach(([dx, dy]) => {
+    ctx.beginPath();
+    ctx.arc(dx, dy, pipR, 0, Math.PI * 2);
+    ctx.fillStyle = '#3A1F12';
+    ctx.fill();
+  });
+  
+  ctx.restore();
+}
+
+function drawFortuneStick(ctx, x, y, w, h, label, tiltDeg = 0) {
+  ctx.save();
+  ctx.translate(x + w / 2, y + h / 2);
+  ctx.rotate((tiltDeg * Math.PI) / 180);
+  
+  const hw = w / 2;
+  const hh = h / 2;
+  const grad = ctx.createLinearGradient(-hw, 0, hw, 0);
+  grad.addColorStop(0, '#6B4E22');
+  grad.addColorStop(0.35, '#E8D48B');
+  grad.addColorStop(0.65, '#C8B06A');
+  grad.addColorStop(1, '#5C3F18');
+  
+  const r = w * 0.35;
+  ctx.beginPath();
+  ctx.moveTo(-hw + r, -hh);
+  ctx.lineTo(hw - r, -hh);
+  ctx.quadraticCurveTo(hw, -hh, hw, -hh + r);
+  ctx.lineTo(hw, hh - r);
+  ctx.quadraticCurveTo(hw, hh, hw - r, hh);
+  ctx.lineTo(-hw + r, hh);
+  ctx.quadraticCurveTo(-hw, hh, -hw, hh - r);
+  ctx.lineTo(-hw, -hh + r);
+  ctx.quadraticCurveTo(-hw, -hh, -hw + r, -hh);
+  ctx.closePath();
+  
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(232, 212, 139, 0.55)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.arc(0, -hh + w * 0.55, w * 0.22, 0, Math.PI * 2);
+  ctx.fillStyle = '#C13B1B';
+  ctx.fill();
+  
+  ctx.fillStyle = '#5C1A12';
+  ctx.font = `600 ${Math.max(14, w * 0.55)}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label.slice(0, 1), 0, 8);
+  ctx.restore();
+  ctx.textBaseline = 'alphabetic';
+}
+
+function drawCornerMark(ctx, x, y, dx, dy, len) {
+  ctx.beginPath();
+  ctx.moveTo(x, y + dy * len);
+  ctx.lineTo(x, y);
+  ctx.lineTo(x + dx * len, y);
+  ctx.strokeStyle = '#D4AF37';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+}
+
+function drawSealStamp(ctx, x, y, size, lines, rotationDeg = -14) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate((rotationDeg * Math.PI) / 180);
+  const half = size / 2;
+  ctx.strokeStyle = 'rgba(193, 59, 27, 0.9)';
+  ctx.lineWidth = 3.5;
+  ctx.strokeRect(-half, -half, size, size);
+  ctx.strokeRect(-half + 6, -half + 6, size - 12, size - 12);
+  ctx.fillStyle = 'rgba(193, 59, 27, 0.12)';
+  ctx.fillRect(-half + 6, -half + 6, size - 12, size - 12);
+  ctx.fillStyle = 'rgba(193, 59, 27, 0.92)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const fontSize = lines.length > 1 ? size * 0.28 : size * 0.36;
+  ctx.font = `700 ${fontSize}px serif`;
+  const step = size * 0.32;
+  const start = -((lines.length - 1) * step) / 2;
+  lines.forEach((line, i) => {
+    ctx.fillText(line, 0, start + i * step);
+  });
+  ctx.restore();
+  ctx.textBaseline = 'alphabetic';
+}
+
+function wrapText(ctx, text, maxWidth, maxLines) {
+  const chars = text.replace(/\s+/g, '');
+  const lines = [];
+  let current = '';
+  for (const ch of chars) {
+    const next = current + ch;
+    if (ctx.measureText(next).width > maxWidth && current) {
+      lines.push(current);
+      current = ch;
+      if (lines.length >= maxLines) break;
+    } else {
+      current = next;
+    }
+  }
+  if (lines.length < maxLines && current) lines.push(current);
+  if (lines.length === maxLines && chars.length > lines.join('').length) {
+    const last = lines[maxLines - 1];
+    lines[maxLines - 1] = last.slice(0, Math.max(1, last.length - 1)) + '…';
+  }
+  return lines;
+}
+
+async function generatePoster(character, qrDataUrl) {
+  const canvas = createCanvas(POSTER_W, POSTER_H);
+  const ctx = canvas.getContext('2d');
+  const s = 1; // scale factor
+  
+  // 背景
+  ctx.fillStyle = '#0D0A06';
+  ctx.fillRect(0, 0, POSTER_W, POSTER_H);
+  
+  // 光晕
+  const glow = ctx.createRadialGradient(POSTER_W * 0.5, POSTER_H * 0.22, 20, POSTER_W * 0.5, POSTER_H * 0.28, 520);
+  glow.addColorStop(0, 'rgba(212, 175, 55, 0.16)');
+  glow.addColorStop(1, 'rgba(212, 175, 55, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, POSTER_W, POSTER_H);
+  
+  const pad = 42;
+  const disclaimerBand = 40;
+  const frameBottom = POSTER_H - pad - disclaimerBand;
+  const frameTop = pad;
+  const frameH = frameBottom - frameTop;
+  
+  // 边框
+  ctx.strokeStyle = '#D4AF37';
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(pad, pad, POSTER_W - pad * 2, frameH);
+  ctx.strokeStyle = 'rgba(92, 74, 46, 0.85)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(pad + 12, pad + 12, POSTER_W - (pad + 12) * 2, frameH - 24);
+  
+  drawCornerMark(ctx, pad + 18, pad + 18, 1, 1, 32);
+  drawCornerMark(ctx, POSTER_W - pad - 18, pad + 18, -1, 1, 32);
+  drawCornerMark(ctx, pad + 18, frameBottom - 18, 1, -1, 32);
+  drawCornerMark(ctx, POSTER_W - pad - 18, frameBottom - 18, -1, -1, 32);
+  
+  const innerTop = pad + 28;
+  const innerBottom = frameBottom - 20;
+  const innerH = innerBottom - innerTop;
+  
+  const headerH = innerH * 0.09;
+  const heroH = innerH * 0.2;
+  const slipH = innerH * 0.36;
+  const adviceH = innerH * 0.22;
+  const footerH = innerH * 0.13;
+  const used = headerH + heroH + slipH + adviceH + footerH;
+  const gapTotal = Math.max(0, innerH - used);
+  const gap = gapTotal / 4;
+  
+  let cursor = innerTop;
+  const headerTop = cursor;
+  cursor += headerH + gap;
+  const heroTop = cursor;
+  cursor += heroH + gap;
+  const slipTop = cursor;
+  cursor += slipH + gap;
+  const adviceTop = cursor;
+  cursor += adviceH + gap;
+  const footerTop = cursor;
+  
+  const dicePip = Math.min(6, Math.max(1, Math.round(character.percentage / 17)));
+  
+  // 顶栏
+  const diceSize = Math.min(54, headerH * 0.55);
+  drawDiceFace(ctx, pad + 28, headerTop + (headerH - diceSize) / 2, diceSize, dicePip, -12);
+  drawDiceFace(ctx, POSTER_W - pad - 28 - diceSize * 0.9, headerTop + (headerH - diceSize * 0.9) / 2, diceSize * 0.9, Math.max(1, 7 - dicePip), 16);
+  
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#8A7B6B';
+  ctx.font = `${Math.max(12, 15)}px serif`;
+  ctx.fillText('命 运 落 子  ·  鹅 城 求 签', POSTER_W / 2, headerTop + headerH * 0.32);
+  ctx.fillStyle = '#E8D48B';
+  ctx.font = `700 ${Math.max(28, 44)}px serif`;
+  ctx.fillText('鹅 城 签', POSTER_W / 2, headerTop + headerH * 0.72);
+  
+  // 人像区
+  const portraitR = Math.min(118, heroH * 0.36);
+  const portraitCX = POSTER_W / 2;
+  const portraitCY = heroTop + portraitR + 6;
+  
+  const stickH = Math.min(slipH + heroH * 0.35, 280);
+  drawFortuneStick(ctx, pad + 22, heroTop + 8, 22, stickH, '上', -5);
+  drawFortuneStick(ctx, POSTER_W - pad - 44, heroTop + 20, 22, stickH, '签', 6);
+  
+  // 头像圆圈
+  ctx.beginPath();
+  ctx.arc(portraitCX, portraitCY, portraitR + 3, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(212, 175, 55, 0.35)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(portraitCX, portraitCY, portraitR + 1, 0, Math.PI * 2);
+  ctx.strokeStyle = '#D4AF37';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+  
+  // 头像背景（纯色，因为没有实际图片）
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(portraitCX, portraitCY, portraitR, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.fillStyle = '#1A1410';
+  ctx.fillRect(portraitCX - portraitR, portraitCY - portraitR, portraitR * 2, portraitR * 2);
+  
+  // 绘制角色首字
+  ctx.fillStyle = '#E8D48B';
+  ctx.font = `700 ${portraitR * 0.8}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(character.name.slice(0, 1), portraitCX, portraitCY);
+  ctx.restore();
+  
+  const nameY = portraitCY + portraitR + heroH * 0.18;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#E8D48B';
+  ctx.font = `700 ${Math.max(26, 38)}px serif`;
+  ctx.fillText(character.name, POSTER_W / 2, nameY);
+  ctx.fillStyle = '#8A7B6B';
+  ctx.font = `${Math.max(14, 18)}px serif`;
+  ctx.fillText(`抽中 · ${character.label}  ·  ${character.percentage}%`, POSTER_W / 2, nameY + 28);
+  
+  // 签牌（判词）
+  const slipX = 88;
+  const slipW = POSTER_W - 176;
+  
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+  const r = 16;
+  ctx.beginPath();
+  ctx.moveTo(slipX + r + 6, slipTop + 8);
+  ctx.lineTo(slipX + slipW - r + 6, slipTop + 8);
+  ctx.quadraticCurveTo(slipX + slipW + 6, slipTop + 8, slipX + slipW + 6, slipTop + 8 + r);
+  ctx.lineTo(slipX + slipW + 6, slipTop + slipH - r + 8);
+  ctx.quadraticCurveTo(slipX + slipW + 6, slipTop + slipH + 8, slipX + slipW - r + 6, slipTop + slipH + 8);
+  ctx.lineTo(slipX + r + 6, slipTop + slipH + 8);
+  ctx.quadraticCurveTo(slipX + 6, slipTop + slipH + 8, slipX + 6, slipTop + slipH - r + 8);
+  ctx.lineTo(slipX + 6, slipTop + 8 + r);
+  ctx.quadraticCurveTo(slipX + 6, slipTop + 8, slipX + r + 6, slipTop + 8);
+  ctx.closePath();
+  ctx.fill();
+  
+  ctx.beginPath();
+  ctx.moveTo(slipX + r, slipTop);
+  ctx.lineTo(slipX + slipW - r, slipTop);
+  ctx.quadraticCurveTo(slipX + slipW, slipTop, slipX + slipW, slipTop + r);
+  ctx.lineTo(slipX + slipW, slipTop + slipH - r);
+  ctx.quadraticCurveTo(slipX + slipW, slipTop + slipH, slipX + slipW - r, slipTop + slipH);
+  ctx.lineTo(slipX + r, slipTop + slipH);
+  ctx.quadraticCurveTo(slipX, slipTop + slipH, slipX, slipTop + slipH - r);
+  ctx.lineTo(slipX, slipTop + r);
+  ctx.quadraticCurveTo(slipX, slipTop, slipX + r, slipTop);
+  ctx.closePath();
+  
+  const slipGrad = ctx.createLinearGradient(slipX, slipTop, slipX, slipTop + slipH);
+  slipGrad.addColorStop(0, 'rgba(42, 32, 20, 0.97)');
+  slipGrad.addColorStop(1, 'rgba(22, 16, 10, 0.98)');
+  ctx.fillStyle = slipGrad;
+  ctx.fill();
+  
+  ctx.strokeStyle = '#D4AF37';
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+  
+  // 竖线装饰
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(slipX + r, slipTop);
+  ctx.lineTo(slipX + slipW - r, slipTop);
+  ctx.quadraticCurveTo(slipX + slipW, slipTop, slipX + slipW, slipTop + r);
+  ctx.lineTo(slipX + slipW, slipTop + slipH - r);
+  ctx.quadraticCurveTo(slipX + slipW, slipTop + slipH, slipX + slipW - r, slipTop + slipH);
+  ctx.lineTo(slipX + r, slipTop + slipH);
+  ctx.quadraticCurveTo(slipX, slipTop + slipH, slipX, slipTop + slipH - r);
+  ctx.lineTo(slipX, slipTop + r);
+  ctx.quadraticCurveTo(slipX, slipTop, slipX + r, slipTop);
+  ctx.closePath();
+  ctx.clip();
+  
+  for (let i = 0; i < 16; i++) {
+    const lx = slipX + 24 + i * ((slipW - 48) / 15);
+    ctx.beginPath();
+    ctx.moveTo(lx, slipTop + 12);
+    ctx.lineTo(lx, slipTop + slipH - 12);
+    ctx.strokeStyle = i % 3 === 0 ? 'rgba(212, 175, 55, 0.07)' : 'rgba(200, 180, 150, 0.035)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  ctx.restore();
+  
+  // 红丝带
+  const ribbonW = 160;
+  const ribbonH = 32;
+  ctx.fillStyle = '#C13B1B';
+  ctx.beginPath();
+  ctx.moveTo((POSTER_W - ribbonW) / 2 + 4, slipTop - 2);
+  ctx.lineTo((POSTER_W + ribbonW) / 2 - 4, slipTop - 2);
+  ctx.quadraticCurveTo((POSTER_W + ribbonW) / 2, slipTop - 2, (POSTER_W + ribbonW) / 2, slipTop + 2);
+  ctx.lineTo((POSTER_W + ribbonW) / 2, slipTop - 2 + ribbonH - 4);
+  ctx.quadraticCurveTo((POSTER_W + ribbonW) / 2, slipTop - 2 + ribbonH, (POSTER_W + ribbonW) / 2 - 4, slipTop - 2 + ribbonH);
+  ctx.lineTo((POSTER_W - ribbonW) / 2 + 4, slipTop - 2 + ribbonH);
+  ctx.quadraticCurveTo((POSTER_W - ribbonW) / 2, slipTop - 2 + ribbonH, (POSTER_W - ribbonW) / 2, slipTop - 2 + ribbonH - 4);
+  ctx.lineTo((POSTER_W - ribbonW) / 2, slipTop + 2);
+  ctx.quadraticCurveTo((POSTER_W - ribbonW) / 2, slipTop - 2, (POSTER_W - ribbonW) / 2 + 4, slipTop - 2);
+  ctx.closePath();
+  ctx.fill();
+  
+  ctx.fillStyle = '#F3E6B8';
+  ctx.font = `600 ${Math.max(13, 17)}px serif`;
+  ctx.fillText('上 上 签', POSTER_W / 2, slipTop + 20);
+  
+  ctx.fillStyle = '#B8973E';
+  ctx.font = `600 ${Math.max(14, 18)}px serif`;
+  ctx.fillText('鹅 城 判 词', POSTER_W / 2, slipTop + slipH * 0.16);
+  
+  // 判词文字
+  const cleanVerdict = character.verdict.replace(/[。，、；：！？]/g, '');
+  const lines = [];
+  for (let i = 0; i < cleanVerdict.length; i += 7) {
+    lines.push(cleanVerdict.slice(i, i + 7));
+  }
+  
+  const lineGap = Math.min(56, (slipH * 0.55) / Math.max(lines.length, 1));
+  const fontSize = Math.min(36, lineGap * 0.62);
+  ctx.font = `${fontSize}px KaiTi, STKaiti, 华文楷体, serif`;
+  const textBlockH = lines.length * lineGap;
+  const startY = slipTop + slipH * 0.28 + Math.max(0, (slipH * 0.52 - textBlockH) / 2);
+  
+  lines.forEach((line, i) => {
+    const chars = Array.from(line);
+    const spacing = 7;
+    let totalW = 0;
+    chars.forEach((ch) => {
+      totalW += ctx.measureText(ch).width + spacing;
+    });
+    totalW -= spacing;
+    let cx = (POSTER_W - totalW) / 2;
+    const ly = startY + i * lineGap;
+    chars.forEach((ch) => {
+      ctx.fillStyle = '#E8D48B';
+      ctx.fillText(ch, cx + ctx.measureText(ch).width / 2, ly);
+      cx += ctx.measureText(ch).width + spacing;
+    });
+  });
+  
+  // 印章
+  const sealSize = Math.min(76, slipH * 0.18);
+  drawSealStamp(ctx, slipX + slipW - sealSize * 0.9, slipTop + slipH - sealSize * 0.9, sealSize, ['鹅', '判']);
+  drawDiceFace(ctx, slipX + 22, slipTop + slipH - 56, Math.min(34, slipH * 0.1), dicePip, -8);
+  
+  // 签解
+  const adviceX = 96;
+  const adviceW = POSTER_W - 192;
+  ctx.beginPath();
+  ctx.moveTo(adviceX + 12, adviceTop);
+  ctx.lineTo(adviceX + adviceW - 12, adviceTop);
+  ctx.quadraticCurveTo(adviceX + adviceW, adviceTop, adviceX + adviceW, adviceTop + 12);
+  ctx.lineTo(adviceX + adviceW, adviceTop + adviceH - 12);
+  ctx.quadraticCurveTo(adviceX + adviceW, adviceTop + adviceH, adviceX + adviceW - 12, adviceTop + adviceH);
+  ctx.lineTo(adviceX + 12, adviceTop + adviceH);
+  ctx.quadraticCurveTo(adviceX, adviceTop + adviceH, adviceX, adviceTop + adviceH - 12);
+  ctx.lineTo(adviceX, adviceTop + 12);
+  ctx.quadraticCurveTo(adviceX, adviceTop, adviceX + 12, adviceTop);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(200, 180, 150, 0.07)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(184, 151, 62, 0.55)';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#D4AF37';
+  ctx.font = `600 ${Math.max(14, 20)}px serif`;
+  ctx.fillText('签 解  ·  生 存 要 诀', adviceX + 22, adviceTop + adviceH * 0.14);
+  
+  const tipStart = adviceTop + adviceH * 0.24;
+  const tipAreaH = adviceH * 0.48;
+  const tipCount = 2;
+  const tipRowH = tipAreaH / tipCount;
+  ctx.font = `${Math.max(13, 18)}px serif`;
+  
+  character.survivalGuide.slice(0, tipCount).forEach((guide, idx) => {
+    const ay = tipStart + idx * tipRowH + tipRowH * 0.45;
+    drawDiceFace(ctx, adviceX + 20, ay - 12, Math.min(20, tipRowH * 0.45), idx + 1, 0);
+    const wrapped = wrapText(ctx, guide, adviceW - 70, 2);
+    ctx.fillStyle = '#C8BBA5';
+    wrapped.forEach((ln, li) => {
+      ctx.fillText(ln, adviceX + 50, ay + li * 22 - (wrapped.length > 1 ? 10 : 0));
+    });
+  });
+  
+  const metaY = adviceTop + adviceH * 0.78;
+  ctx.fillStyle = '#B8973E';
+  ctx.font = `600 ${Math.max(12, 16)}px serif`;
+  ctx.fillText('玄学建议', adviceX + 22, metaY);
+  ctx.fillStyle = '#A89880';
+  ctx.font = `${Math.max(12, 15)}px serif`;
+  const metaWrapped = wrapText(ctx, character.metaphysics, adviceW - 44, 2);
+  metaWrapped.forEach((ln, i) => {
+    ctx.fillText(ln, adviceX + 22, metaY + 24 + i * 20);
+  });
+  
+  // 二维码区
+  const qrSize = Math.min(112, footerH * 0.55);
+  ctx.strokeStyle = 'rgba(58, 47, 37, 0.95)';
+  ctx.beginPath();
+  ctx.moveTo(160, footerTop);
+  ctx.lineTo(POSTER_W - 160, footerTop);
+  ctx.stroke();
+  
+  const sideDice = Math.min(40, footerH * 0.35);
+  drawDiceFace(ctx, pad + 36, footerTop + (footerH - sideDice) / 2, sideDice, 5, -16);
+  drawFortuneStick(ctx, POSTER_W - pad - 56, footerTop + 8, 18, Math.min(footerH - 12, 120), '测', 8);
+  
+  // 绘制二维码
+  if (qrDataUrl) {
+    const qrImg = await loadImage(qrDataUrl);
+    if (qrImg) {
+      const qrX = (POSTER_W - qrSize) / 2;
+      const qrY = footerTop + footerH * 0.08;
+      
+      // 二维码背景
+      ctx.beginPath();
+      ctx.moveTo(qrX - 6 + 6, qrY - 6);
+      ctx.lineTo(qrX + qrSize + 6 - 6, qrY - 6);
+      ctx.quadraticCurveTo(qrX + qrSize + 6, qrY - 6, qrX + qrSize + 6, qrY - 6 + 6);
+      ctx.lineTo(qrX + qrSize + 6, qrY + qrSize + 6 - 6);
+      ctx.quadraticCurveTo(qrX + qrSize + 6, qrY + qrSize + 6, qrX + qrSize + 6 - 6, qrY + qrSize + 6);
+      ctx.lineTo(qrX - 6 + 6, qrY + qrSize + 6);
+      ctx.quadraticCurveTo(qrX - 6, qrY + qrSize + 6, qrX - 6, qrY + qrSize + 6 - 6);
+      ctx.lineTo(qrX - 6, qrY - 6 + 6);
+      ctx.quadraticCurveTo(qrX - 6, qrY - 6, qrX - 6 + 6, qrY - 6);
+      ctx.closePath();
+      ctx.fillStyle = '#E8D48B';
+      ctx.fill();
+      
+      ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+    }
+  }
+  
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#D4AF37';
+  ctx.font = `${Math.max(12, 17)}px serif`;
+  ctx.fillText('扫码求签 · 测测你是鹅城谁', POSTER_W / 2, footerTop + footerH * 0.08 + qrSize + footerH * 0.22);
+  ctx.fillStyle = '#5C4A2E';
+  ctx.font = `${Math.max(10, 12)}px serif`;
+  ctx.fillText('鹅城往事 · 鹅城人格鉴定  ·  GANO PRODUCTION', POSTER_W / 2, footerTop + footerH * 0.08 + qrSize + footerH * 0.38);
+  
+  // 免责声明
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#4A3F35';
+  ctx.font = `${Math.max(9, 11)}px serif`;
+  const dLines = wrapText(ctx, DISCLAIMER, POSTER_W - pad * 2 - 16, 2);
+  let dy = POSTER_H - pad * 0.45 - (dLines.length - 1) * 14;
+  dLines.forEach((ln) => {
+    ctx.fillText(ln, POSTER_W / 2, dy);
+    dy += 14;
+  });
+  
+  return canvas;
+}
+
+function loadImage(src) {
+  return new Promise((resolve) => {
+    const { Image } = require('canvas');
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+async function main() {
+  console.log('开始生成角色海报...');
+  
+  // 生成二维码
+  console.log('生成二维码...');
+  const qrDataUrl = await QRCode.toDataURL(SHARE_URL, {
+    width: 240,
+    margin: 1,
+    color: { dark: '#0D0A06', light: '#E8D48B' },
+    errorCorrectionLevel: 'M',
+  });
+  
+  const outputDir = path.join(process.cwd(), 'outputs');
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+  
+  for (const character of CHARACTERS) {
+    console.log(`生成 ${character.name} 的海报...`);
+    const canvas = await generatePoster(character, qrDataUrl);
+    const buffer = canvas.toBuffer('image/png');
+    const filePath = path.join(outputDir, `鹅城签-${character.name}.png`);
+    fs.writeFileSync(filePath, buffer);
+    console.log(`  ✓ 已保存: ${filePath}`);
+  }
+  
+  console.log('\n全部完成！共生成', CHARACTERS.length, '张海报');
+  console.log('输出目录:', outputDir);
+}
+
+main().catch(console.error);
