@@ -1,5 +1,7 @@
 // 性格测试数据类型定义
 
+import { publicUrl } from "@/lib/utils";
+
 export interface Question {
   id: number;
   text: string;
@@ -38,21 +40,21 @@ export const CHARACTER_IMAGES: Record<CharacterType, string> = {
   laosan: "https://conversation.cdn.meoo.host/conversations/336348431167721472/image/2026-07-17/1784264253000-laosan.png?auth_key=ee1925f8d4e0d901f02a5bfa070dc0a67d8ab113b4c9ceb707c323df4f5b6ab0",
   laoer: "https://conversation.cdn.meoo.host/conversations/336348431167721472/image/2026-07-17/1784264253006-laoer.png?auth_key=b3f63c7a7ad66d641ee5809a75b98feaec7a19115e6d34ddf2972f01d0518985",
   huajie: "https://conversation.cdn.meoo.host/conversations/336348431167721472/image/2026-07-17/1784264253002-huajie.png?auth_key=801cb707d39bbccaa30006fb9861e532fc8644f55b660118237a3d0063cbe6cb",
-  furen: "/images/furen.png",
-  huwan: "/images/huwan.png", // 胡万 · 礼
+  furen: publicUrl("images/furen.png"),
+  huwan: publicUrl("images/huwan.png"), // 胡万 · 礼
   wujuren: "https://conversation.cdn.meoo.host/conversations/336348431167721472/image/2026-07-17/1784264252989-wujuren.png?auth_key=8736107ca507da85268b91733ed5efbc43ac9e6dcd22cff212f0b1389b756e9e",
   sunshouyi: "https://conversation.cdn.meoo.host/conversations/336348431167721472/image/2026-07-17/1784264252980-sunshouyi.png?auth_key=9d9040cb764d84ada7ea63778aab906bbfa76220ab2f298f0e330c4ff13b5db8",
   laoqi: "https://conversation.cdn.meoo.host/conversations/336348431167721472/image/2026-07-17/1784264380069-laoqi.png?auth_key=08a8720d295791a82824f0e275e08ae97840702739ded97a73936068cd04d61e",
   tiejiang: "https://conversation.cdn.meoo.host/conversations/336348431167721472/image/2026-07-17/1784264252983-tiejiang.png?auth_key=85aebcfd4123ead5ea42894a145857afecb99aa8d9bafcfc3ce8e996eb574867",
   liuzi: "https://conversation.cdn.meoo.host/conversations/336348431167721472/image/2026-07-17/1784264252990-liuzi.png?auth_key=3010a7837958104ee40a8a3b34ff29eda63b02913fa7198d6662c5c0e562219e",
-  ai: "/images/ai.jpg",
+  ai: publicUrl("images/ai.jpg"),
 };
 
 // 角色微动效视频映射(CDN URL)
 export const CHARACTER_VIDEOS: Record<CharacterType, string> = {
   zhang: "https://conversation.cdn.meoo.host/conversations/336348431167721472/video/2026-07-17/1784264409803-anim_zhangmazi.mp4?auth_key=448510227d8b486c3eb778d7366b21dd973f2359848d877d614858b36a34dcdf",
   huang: "https://conversation.cdn.meoo.host/conversations/336348431167721472/video/2026-07-17/1784264422955-anim_huangsilang.mp4?auth_key=9ccb1e1dc9434b7a1f0967d7802e8e6a7040f9edd63f62acfab912759eda03af",
-  tang: "/videos/tang.mp4",
+  tang: publicUrl("videos/tang.mp4"),
   laosan: "https://conversation.cdn.meoo.host/conversations/336348431167721472/video/2026-07-17/1784264422941-anim_laosan.mp4?auth_key=42c8caf4093bab4e05ca12df31146f37f47554cfc8552eab3111d98ded446c02",
   laoer: "https://conversation.cdn.meoo.host/conversations/336348431167721472/video/2026-07-17/1784264422957-anim_laoer.mp4?auth_key=013f1ce1d34fe6a78c1e251651789f79c8d17dad77722c1c1aa01c8e7e507324",
   huajie: "https://conversation.cdn.meoo.host/conversations/336348431167721472/video/2026-07-17/1784264422957-anim_huajie_mp4.mp4?auth_key=a037535e2c48257b1a7025fbb68d2f9074dad51c7bd9a5ce608069acbff36d68",
@@ -63,7 +65,7 @@ export const CHARACTER_VIDEOS: Record<CharacterType, string> = {
   laoqi: "https://conversation.cdn.meoo.host/conversations/336348431167721472/video/2026-07-17/1784264487230-anim_laoqi.mp4?auth_key=e8f3afdec2fd166b7ace967db75e10cfd9516dc83c94f3ff917fa541a791b2d4",
   tiejiang: "https://conversation.cdn.meoo.host/conversations/336348431167721472/video/2026-07-17/1784264487221-anim_tiejiang.mp4?auth_key=d5428253ce8a849aea19945c90270c243f8fe1339c9635c618f06ee4e1c343f2",
   liuzi: "https://conversation.cdn.meoo.host/conversations/336348431167721472/video/2026-07-17/1784264397427-anim_liuzi.mp4?auth_key=5ecb745732aa238d8d182072e79d7820131012ca09db7e3111d618429d59c3b4",
-  ai: "/videos/anim_ai.mp4",
+  ai: publicUrl("videos/anim_ai.mp4"),
 };
 
 // 背景音乐：久石譲 - The Sun Also Rises
@@ -78,12 +80,12 @@ export const LOADING_MASK_VIDEO = "https://conversation.cdn.meoo.host/conversati
 
 // 分享海报背景：前 4 张随机；第 5 张仅 AI 结果专用
 export const POSTER_BG_POOL = [
-  "/images/poster_bg_1.png",
-  "/images/poster_bg_2.png",
-  "/images/poster_bg_3.png",
-  "/images/poster_bg_4.png",
+  publicUrl("images/poster_bg_1.png"),
+  publicUrl("images/poster_bg_2.png"),
+  publicUrl("images/poster_bg_3.png"),
+  publicUrl("images/poster_bg_4.png"),
 ] as const;
-export const POSTER_BG_AI = "/images/poster_bg_ai.png";
+export const POSTER_BG_AI = publicUrl("images/poster_bg_ai.png");
 /** 兼容旧调用：默认取池内第一张 */
 export const POSTER_BG = POSTER_BG_POOL[0];
 /** @deprecated 请优先用 POSTER_BG / pickPosterBg */

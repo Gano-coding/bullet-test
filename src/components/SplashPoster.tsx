@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { FC } from "react";
+import { publicUrl } from "@/lib/utils";
 
 interface SplashPosterProps {
   /** 入场完成（淡出结束后） */
@@ -55,7 +56,7 @@ const SplashPoster: FC<SplashPosterProps> = ({ onEnter }) => {
         {/* 开屏海报：images/poster_cyber.jpg */}
         <img
           className="splash-poster-img"
-          src="/images/poster_cyber.jpg"
+          src={publicUrl("images/poster_cyber.jpg")}
           alt="鹅城开屏海报"
           draggable={false}
         />
